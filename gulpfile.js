@@ -15,6 +15,7 @@ var clean = require('gulp-clean');
 var es = require('event-stream');
 var runSequence = require('run-sequence');
 var jsonToObject = require('./lib/gulp-json2obj');
+var expandFiles = require('grunt').file.expand;
 
 var pkg = require('./package.json');
 var files = require('./files');
@@ -22,6 +23,7 @@ process.env.MOCK_DATA_DIR = process.env.MOCK_DATA_DIR || 'data/sample';
 process.env.FONTS_ENDPOINT = 'build/' + pkg.version + '/fonts';
 process.env.IMAGES_ENDPOINT = 'build/' + pkg.version + '/images';
 var jshintrc = JSON.parse(fs.readFileSync('.jshintrc'));
+var testem = require('./testem.json');
 
 gulp.task('jshint-app', function() {
   return gulp.src(['app/**/*.js', 'mock/**/*.js'])
@@ -193,6 +195,14 @@ gulp.task('build', function(cb) {
   cb);
 });
 
+gulp.task('before-tests-mocha', function() {
+  return gulp.src([
+      'node_modules/mocha/mocha.css',
+      'node_modules/mocha/mocha.js'
+    ])
+    .pipe(gulp.dest('tmp/test'));
+});
+
 gulp.task('before-tests-vendor', function() {
   return gulp.src(files.js.vendor)
     .pipe(gulp.dest('tmp/test/vendor'));
@@ -207,7 +217,7 @@ gulp.task('before-tests-data', function(cb) {
       var contents = 'window.data = ';
       contents = contents + util.inspect(data, {depth: null});
       contents = contents + ';';
-      fs.writeFile('tmp/test/data.js', contents, cb);
+      fs.writeFile('./tmp/test/data.js', contents, cb);
     });
 });
 
@@ -229,11 +239,34 @@ gulp.task('before-tests-unit', function() {
     .pipe(gulp.dest('tmp/test/unit'));
 });
 
-gulp.task('before-tests', [
-  'before-tests-vendor',
-  'before-tests-data',
-  'before-tests-setup',
-  'before-tests-unit'
-]);
+gulp.task('before-tests-index', function() {
+  // NOTE: `expandFiles` expects files to be present at the given location
+  // on the file system (uses "file exists" test), else it will return 
+  // nothing for each file "not found"
+  var testFiles = expandFiles(testem.serve_files);
+  testFiles = _.map(testFiles, function(file) {
+    return file.replace('tmp/test/', '');
+  });
+
+  return gulp.src('test/index.html')
+    .pipe(template({
+      files: testFiles
+    }))
+    .pipe(gulp.dest('tmp/test'));
+});
+
+gulp.task('before-tests', function(cb) {
+  // IMPORTANT: 'before-tests-index' needs all test files to be built first
+  runSequence(
+    [
+      'before-tests-mocha',
+      'before-tests-vendor',
+      'before-tests-data',
+      'before-tests-setup',
+      'before-tests-unit'
+    ],
+    'before-tests-index',
+  cb);
+});
 
 gulp.task('default', ['build']);
