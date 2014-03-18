@@ -29,7 +29,7 @@ describe('Profile', function() {
     user = {
       firstName: 'Johnny',
       lastName: 'Smith',
-      email: 'johnny.smith@example.com',
+      username: 'johnny.smith@example.com',
       password: 'pw',
       passwordConfirm: 'pw'
     };
@@ -43,6 +43,25 @@ describe('Profile', function() {
       });
   });
 
+  it('should have link to go back to home page', function(done) {
+    openAppToProfile()
+      .then(clickBackLink)
+      .then(function() {
+        expect('.js-patients-page').dom.to.be.visible();
+        done();
+      });
+  });
+
+  it('should disable form submit when fetching profile data', function(done) {
+    openAppToProfile({
+      'api.user.get.delay': 10000
+    })
+      .then(function() {
+        expect('.js-form-submit').dom.to.be.disabled();
+        done();
+      });
+  });
+
   function openAppToProfile(qs) {
     return openAppTo('/profile', _.assign({
       'auth.skip': true
@@ -51,19 +70,31 @@ describe('Profile', function() {
 
   function fillOutForm() {
     helpers.findElement(By.name('firstName'))
+      .then(helpers.clearInput)
       .then(function(q) { return q.sendKeys(user.firstName); });
     helpers.findElement(By.name('lastName'))
+      .then(helpers.clearInput)
       .then(function(q) { return q.sendKeys(user.lastName); });
     helpers.findElement(By.name('username'))
+      .then(helpers.clearInput)
       .then(function(q) { return q.sendKeys(user.username); });
     helpers.findElement(By.name('password'))
+      .then(helpers.clearInput)
       .then(function(q) { return q.sendKeys(user.password); });
     return helpers.findElement(By.name('passwordConfirm'))
+      .then(helpers.clearInput)
       .then(function(q) { return q.sendKeys(user.passwordConfirm); });
   }
 
   function submitForm() {
     return helpers.findElement(By.css('.js-form-submit'))
+      .then(function(q) {
+        return q.click();
+      });
+  }
+
+  function clickBackLink() {
+    return helpers.findElement(By.css('.js-back'))
       .then(function(q) {
         return q.click();
       });

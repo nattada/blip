@@ -117,7 +117,7 @@ var PatientEdit = React.createClass({
 
     /* jshint ignore:start */
     return (
-      <a href={url}>
+      <a className="js-back" href={url}>
         <i className="icon-back"></i>
         {' ' + text}
       </a>
@@ -289,8 +289,7 @@ var PatientEdit = React.createClass({
           working: false,
           notification: {
             type: 'error',
-            message: err.message ||
-              'An error occured while creating your patient profile.'
+            message: 'An error occured while creating your patient profile.'
           }
         });
         return;
