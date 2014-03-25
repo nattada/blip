@@ -621,13 +621,13 @@ var AppComponent = React.createClass({
   },
 
   processPatientData: function(data) {
+    app.log('Patient data string', JSON.stringify(data));
     return chartUtil.processData(data);
   },
 
   logPatientDataInfo: function(data) {
     data = data || [];
     app.log('Patient data total count', data.length);
-    app.log('Patient data string', JSON.stringify(data));
     app.log('Patient data count by type', _.countBy(data, 'type'));
   },
 
